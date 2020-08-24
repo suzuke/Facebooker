@@ -284,13 +284,14 @@ class API:
             soup = BeautifulSoup(req.text,'lxml')
             try:
                 div = soup.find('div',id='ufi_%s'%str(post_id))
-                comment_div = div.find('div',id='sentence_%s'%str(post_id)).next_sibling
+                comment_div = div.find('div',id='sentence_%s'%str(post_id)).next_sibling.next_sibling
                 comments = comment_div.findAll('div', recursive=False)
                 comments.reverse()
             except Exception as e:
                 logging.debug(e)
                 logging.error('You don\'t have access authority')
                 return
+
             for comment in comments:
                 try:
                     comment_author = comment.find('h3').find('a').text
@@ -307,17 +308,25 @@ class API:
                 except:
                     pass
 
-            pre_page_div = comment_div.find('div', id='see_prev_%s'%str(post_id))
+            # pre_page_div = comment_div.find('div', id='see_prev_%s'%str(post_id))
+            #
+            # if pre_page_div:
+            #     pre_href = pre_page_div.find('a').get('href')
+            #     pre_href = pre_href[pre_href.find('p='):]
+            #     start = pre_href[2:pre_href.find('&')]
+            # else:
+            #     break
 
-            if pre_page_div:
-                pre_href = pre_page_div.find('a').get('href')
-                pre_href = pre_href[pre_href.find('p='):]
-                start = pre_href[2:pre_href.find('&')]
+            next_page_div = comment_div.find('div', id='see_next_%s'%str(post_id))
+
+            if next_page_div:
+                next_href = next_page_div.find('a').get('href')
+                next_href = next_href[next_href.find('p='):]
+                start = next_href[2:next_href.find('&')]
             else:
                 break
 
-
-
+        print(num)
         return comment_info_list
 
     def delete_comment(self, post_id, comment_id):
