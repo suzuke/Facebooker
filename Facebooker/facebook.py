@@ -326,7 +326,6 @@ class API:
             else:
                 break
 
-        print(num)
         return comment_info_list
 
     def delete_comment(self, post_id, comment_id):
