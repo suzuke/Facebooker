@@ -102,15 +102,31 @@ class API:
             self.session.cookies.update(pickle.load(f))
     
     # post methods
-    def get_post(self, post_id, group_id=None):
+    def get_group_post(self, group_id, post_id):
         if not self.login_check:
             logging.error('You should login first')
             return
-        url = 'https://m.facebook.com/story.php?' + \
-              'story_fbid=%s&id=1'%str(post_id)
-        if group_id:
-            url = 'https://m.facebook.com/groups/%s?'%str(group_id) + \
-                  'view=permalink&id='%str(post_id)
+
+        url = f'https://m.facebook.com/groups/{group_id}?view=permalink&id={post_id}'
+        req = self.session.get(url)
+        soup = BeautifulSoup(req.text, 'lxml')
+        # divs = soup.findAll('div')
+        # for div in divs:
+        #     print("*" * 10)
+        #     print(div)
+
+        post_content = soup.find('div', class_='bx')
+        if not post_content:
+            logging.error('This post is not supported or you don\'t have acess authority')
+        return post_content
+
+
+    def get_post(self, post_id):
+        if not self.login_check:
+            logging.error('You should login first')
+            return
+
+        url = f'https://m.facebook.com/story.php?story_fbid={post_id}&id=1'
         req = self.session.get(url)
         soup = BeautifulSoup(req.text,'lxml')
         post_content = soup.find('div',class_='z')
@@ -170,7 +186,7 @@ class API:
         while len(posts_id) < num:
             req = self.session.get(url)
             soup = BeautifulSoup(req.text, 'lxml')
-            posts = soup.find('section').findAll('article', recursive=False)
+            posts = soup.find('div', id='m_group_stories_container').find('section').findAll('article',recursive=False)
             for post in posts:
                 data = json.loads(post.get('data-ft'))
                 post_id = data['mf_story_key']
@@ -179,7 +195,7 @@ class API:
                     break
             if len(posts_id) >= num:
                     break
-            next_href = soup.find('section').next_sibling.find('a').get('href')
+            next_href = soup.find('div', id='m_group_stories_container').find('div', class_='dz ea eb ec ed').find('a').get('href')
             url = 'https://m.facebook.com' + next_href
         return posts_id
     
