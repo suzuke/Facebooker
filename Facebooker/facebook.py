@@ -452,3 +452,34 @@ class API:
             self.send_msg_data['ids[%s]'%str(chat_room_id)] = str(chat_room_id)
         self.send_msg_data['body'] = content
         self.session.post(url, data=self.send_msg_data)
+
+    #group
+    def get_group_member_list(self, group_id, num=10):
+        if not self.login_check:
+            logging.error('You should login first')
+            return
+        url = f'https://m.facebook.com/browse/group/members/?id={group_id}&start=0&listType=list_general'
+
+        members_id = []
+        while len(members_id) < num:
+            #print(url)
+            req = self.session.get(url)
+            soup = BeautifulSoup(req.text, 'lxml')
+            members = soup.findAll('table', id=lambda x: x and x.startswith('member_'))
+            for member in members:
+                try:
+                    member_id = member.get('id').replace('member_', '')
+                    members_id.append(member_id)
+                except:
+                    pass
+                if len(members_id) == num:
+                    break
+            #print(len(members_id))
+            try:
+                next_href = soup.find('div', id='m_more_item').find('a').get('href')
+            except AttributeError:
+                logging.error('The maximum number is 120 due to facebook\'s limitation.')
+                break
+            url = f'https://m.facebook.com{next_href}'
+
+        return members_id
