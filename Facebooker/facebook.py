@@ -142,7 +142,7 @@ class API:
         if action > 6 or action < 0:
             logging.error('This action is not supported')
             return
-        url = 'https://m.facebook.com/reactions/picker/?ft_id=' + str(post_id)
+        url = f'https://m.facebook.com/reactions/picker/?ft_id={post_id}'
         req = self.session.get(url)
         try:
             soup = BeautifulSoup(req.text, 'lxml')
@@ -460,7 +460,7 @@ class API:
             return
         url = f'https://m.facebook.com/browse/group/members/?id={group_id}&start=0&listType=list_general'
 
-        members_id = []
+        members_id = set()
         while len(members_id) < num:
             #print(url)
             req = self.session.get(url)
@@ -469,7 +469,7 @@ class API:
             for member in members:
                 try:
                     member_id = member.get('id').replace('member_', '')
-                    members_id.append(member_id)
+                    members_id.add(member_id)
                 except:
                     pass
                 if len(members_id) == num:
@@ -481,5 +481,18 @@ class API:
                 logging.error('The maximum number is 120 due to facebook\'s limitation.')
                 break
             url = f'https://m.facebook.com{next_href}'
+        return [member_id for member_id in members_id]
 
-        return members_id
+    #profile
+    def get_user_about(self, user_id):
+        if not self.login_check:
+            logging.error('You should login first')
+            return
+        url = f'https://m.facebook.com/{user_id}'
+        req = self.session.get(url)
+        user_name = req.url.replace('https://m.facebook.com/', '').replace('?_rdr', '')
+        about_url = f'https://m.facebook.com/{user_name}/about'
+        print(about_url)
+        req = self.session.get(about_url)
+        soup = BeautifulSoup(req.text, 'lxml')
+        print(soup)
